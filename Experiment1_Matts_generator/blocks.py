@@ -8,7 +8,6 @@ import random
 from tqdm import tqdm
 from draw_lines import drawline
 
-
 #%%
 class Parm():
     def __init__(self):
@@ -67,8 +66,6 @@ class Block():
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
 
 
-
-
 class MattsPage():
     def __init__(self, parm):
         self.top_edge = np.random.uniform(parm._top_edge[0], parm._top_edge[1]) 
@@ -96,7 +93,6 @@ class MattsPage():
         self.column_line = random.sample(parm._column_line, 1)[0]
         if self.row_type == 'threelines' and self.column_line == 'no':
             self.column_line = random.sample(['no', 'edge','each','each'], 1)[0]
-
 
         self.hight_block = (self.block_size * self.block_row_num) + (self.row_distance * (self.block_row_num-1))
         if self.row_type == 'threelines':
@@ -196,9 +192,6 @@ class MattsPage():
                 else:
                     cv2.line(self.image, (x1,self.left_top_y[i]), (x2,self.left_top_y[i]),(0,0,0),2)
                     cv2.line(self.image, (x1,self.right_bottom_y[i]), (x2,self.right_bottom_y[i]),(0,0,0),2)
-        
-
-
 
         if self.column_line == 'edge':
             cv2.line(self.image, (x1-1,y1), (x1-1,y2), (0,0,0), 3)
@@ -214,12 +207,10 @@ class MattsPage():
                     cv2.line(self.image, (self.right_bottom_x[i], y1), (self.right_bottom_x[i], y2), (0,0,0), 2)
 
 
-
-
-
 #%%
 if __name__ == '__main__':
     parm = Parm()
+    num = 100
     page1 = MattsPage(parm)
     page2 = MattsPage(parm)
     page3 = MattsPage(parm)
@@ -240,10 +231,7 @@ if __name__ == '__main__':
     plt.imshow(page4.image)
     plt.axis('off') 
     plt.show()
-
-    num = 100
     
     for i in tqdm(range(num)):
         page = MattsPage(parm)
         matplotlib.image.imsave(f'./Pictures/page_{i}.jpg', page.image)
-#%%
