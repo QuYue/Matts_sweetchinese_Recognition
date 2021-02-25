@@ -1,5 +1,5 @@
 #%%
-# %matplotlib Qt5
+%matplotlib Qt5
 import numpy as np
 import cv2
 import matplotlib
