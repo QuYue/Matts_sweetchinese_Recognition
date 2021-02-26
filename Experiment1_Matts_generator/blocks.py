@@ -6,6 +6,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
+from PIL import ImageFont
+from PIL import Image
+from PIL import ImageDraw
 from draw_lines import drawline
 
 #%%
@@ -36,6 +39,106 @@ class Parm():
 
         self._threelines_type = ['dotted0','dotted1', 'normal']
 
+        self.text_library_path = './Fonts'
+        self._text_model = [1,2] # 2种文字排版模式
+        self._space_ratio2 = [0, 0.8] # 模式2空格率
+        self._text_color = [(0, 0, 0), (0,0,255), (255, 0, 0), (180,180,180), (128,0,200)] # 文字颜色
+
+
+class Text_Selector:
+    def __init__(self, pun_ratio=0.1, space_ratio=0.1, space_ratio2=0.3, path='./Fonts'):
+        self.path = path
+        self.chinese = ''
+        self.fonts = []
+        self.punctuation = "。，、；！？“”（）：+-=%" # 标点符号
+        self.chinese_library()
+        self.fonts_library()
+        self.punctuation_library()
+        self.pun_ratio = pun_ratio
+        self.space_ratio = space_ratio
+        self.space_ratio2 = space_ratio2 
+
+    def chinese_library(self):
+        with open(self.path+'/library.txt', "r", encoding='UTF-8') as f:
+            self.chinese = f.readline()
+        self.chinese_list = [char for char in self.chinese]
+
+    def fonts_library(self):
+        file_name_list = os.listdir(self.path)
+        self.fonts = []
+        for file in file_name_list:
+            file_type = file.split('.')[1]
+            if file_type == 'ttf' or file_type == 'ttc':
+                self.fonts.append(self.path+'/'+file)
+    
+    def punctuation_library(self):
+        pun_counter = 0
+        weight = 1
+        punctuation = self.punctuation[::-1]
+        self.punctuation_list = []
+        for i in punctuation:
+            self.punctuation_list += [i] * weight
+            pun_counter += 1
+            if pun_counter >= 3:
+                pun_counter = 0
+                weight += 2
+        np.random.shuffle(self.punctuation_list)
+        
+    def text_select(self, row_num, column_num, model=1):
+        if model == 1:
+            texts = self.model1(row_num, column_num)
+        elif model == 2:
+            texts = self.model2(row_num, column_num)
+        return texts
+
+    def model1(self, row_num, column_num):
+        roulette = np.random.rand(row_num, column_num)
+        choose = np.zeros(roulette.shape)
+        choose[roulette <= self.pun_ratio] = 1
+        choose[np.logical_and(roulette>self.pun_ratio, roulette<=(self.pun_ratio+self.space_ratio))] = 2
+        chinese = np.random.choice(self.chinese_list, size=np.sum(choose==0), replace=True)
+        punctuation = np.random.choice(self.punctuation_list, size=np.sum(choose==1), replace=True)
+        texts = []
+        c_index, p_index = 0, 0
+        for i in range(row_num):
+            text = ''
+            for j in range(column_num):
+                if choose[i,j] == 0:
+                    text += chinese[c_index][0]
+                    c_index += 1
+                elif choose[i,j] == 1:
+                    text += punctuation[p_index][0]
+                    p_index += 1
+                else:
+                    text += ' '
+            texts.append(text)
+        return texts
+
+    def model2(self, row_num, column_num):
+        roulette = np.random.rand(row_num, column_num)
+        choose = np.zeros(roulette.shape)
+        choose[roulette <= self.pun_ratio] = 1
+        chinese = np.random.choice(self.chinese_list, size=np.sum(choose==0), replace=True)
+        punctuation = np.random.choice(self.punctuation_list, size=np.sum(choose==1), replace=True)
+        nospace_num = row_num * column_num - int((row_num * column_num) * self.space_ratio2)
+        texts = []
+        c_index, p_index, space_flag = 0, 0, 0
+        for i in range(row_num):
+            text = ''
+            for j in range(column_num):
+                if space_flag < nospace_num:
+                    if choose[i,j] == 0:
+                        text += chinese[c_index][0]
+                        c_index += 1
+                    else:
+                        text += punctuation[p_index][0]
+                        p_index += 1
+                else:
+                    text += ' '
+                space_flag += 1
+            texts.append(text)
+        return texts
+
 class Block():
     # block_type: 'block', 'matts', 'grid'
     def __init__(self, left_top, right_bottom, image, block_type='matts', line_type='dotted1', line_gap=3):
@@ -52,6 +155,9 @@ class Block():
         self.right_x = self.right_bottom[0]
         self.middle_x = int((self.left_x + self.right_x)/2)
         self.middle_y = int((self.top_y + self.bottom_y)/2)
+
+        self.corr = (self.left_x, self.top_y, self.right_x, self.bottom_y)
+        self.text = None
     
     def draw(self):
         cv2.rectangle(self.image, self.left_top, self.right_bottom, (0,0,0), 2)
@@ -66,8 +172,9 @@ class Block():
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
 
 
+
 class MattsPage():
-    def __init__(self, parm):
+    def __init__(self, parm, text_selector):
         self.top_edge = np.random.uniform(parm._top_edge[0], parm._top_edge[1]) 
         self.bottom_edge = np.random.uniform(parm._bottom_edge[0], parm._bottom_edge[1]) 
         self.left_edge = np.random.uniform(parm._left_edge[0], parm._left_edge[1]) 
@@ -80,11 +187,18 @@ class MattsPage():
         self.block_size = np.random.randint(parm._block_size[0], parm._block_size[1]+1)
         self.block_row_num = np.random.randint(parm._block_row_num[0], parm._block_row_num[1]+1)
         self.block_column_num = np.random.randint(parm._block_column_num[0], parm._block_column_num[1]+1)
+        self.size = (self.block_row_num, self.block_column_num)
         self.block_type = random.sample(parm._block_type,1)[0]
         self.block_line_type = random.sample(parm._block_line_type,1)[0]
         self.block_line_gap0 = np.random.randint(parm._block_line_gap[0], parm._block_line_gap[1]+1)
         self.block_line_gap = int(self.block_size /self.block_line_gap0)
         self.threelines_type = random.sample(parm._threelines_type,1)[0]
+
+        self.text_selector = text_selector
+        self.text_model = random.sample(parm._text_model, 1)[0]
+        self.font = random.sample(self.text_selector.fonts, 1)[0]
+        self.text_color = random.sample(parm._text_color, 1)[0]
+        self.space_ratio2 = np.random.uniform(parm._space_ratio2[0], parm._space_ratio2[1])
 
         self.row_type = random.sample(parm._row_type, 1)[0]
         self.column_type = random.sample(parm._column_type, 1)[0]
@@ -107,6 +221,7 @@ class MattsPage():
         self.get_edge() # 生成周围
         self.get_Blocks() # 生成格
         self.get_lines() # 生成横竖线
+        self.get_texts() # 生成文字
 
     def get_img(self):
         self.image = np.ones([self.hight, self.width, self.channel], np.uint8) * 255
@@ -206,15 +321,79 @@ class MattsPage():
                     cv2.line(self.image, (self.left_top_x[i], y1), (self.left_top_x[i], y2), (0,0,0), 2)
                     cv2.line(self.image, (self.right_bottom_x[i], y1), (self.right_bottom_x[i], y2), (0,0,0), 2)
 
+    def draw_text(self, position):
+        t_reduce = np.random.uniform(0.1, 0.2, self.size)
+        image = Image.fromarray(self.image.astype('uint8')).convert('RGBA')
+        text_overlay = Image.new('RGBA', image.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(text_overlay)
+        for p in position:
+            i, j = p[0], p[1]
+            word_size = int(self.block_size * (1-t_reduce[i][j]))
+            font = ImageFont.truetype(self.font,word_size)
+            block = self.blocks[i][j]
+            text = block.text
+            fontsize = font.getsize(text)
+            if text in "。，、；！？“”（）：+-=%":
+                draw.text((block.middle_x-int(fontsize[0]/2), block.middle_y-int(fontsize[1]/2)),text,fill=self.text_color,font=font) #设置位置坐标 文字 颜色 字体
+            else:
+                draw.text((block.middle_x-int((fontsize[0]+font.getoffset(text)[0])/2), block.middle_y-int((fontsize[1]+font.getoffset(text)[1])/2)),text,fill=self.text_color,font=font)
+        image = Image.alpha_composite(image, text_overlay)
+        self.image = np.array(image)
 
+
+    def get_texts(self):
+        def color_change(color):
+            c = []
+            for i in range(len(color)):
+                j = color[i]
+                if j<0:
+                    c.append(0)
+                elif j>255:
+                    c.append(255)
+                else:
+                    c.append(j)
+            c.append(290-np.random.randint(0, 90))
+            return tuple(c)
+        text_color = [self.text_color[0], self.text_color[1], self.text_color[2]]
+        self.text_color = np.array(text_color)
+        self.text_color -= np.random.randint(-20, 20, self.text_color.shape)
+        self.text_color = color_change(self.text_color) 
+
+        if self.text_model == 2:
+            self.text_selector.space_ratio2 = self.space_ratio2
+        self.text = self.text_selector.text_select(self.block_row_num, self.block_column_num, self.text_model)
+        position = []
+        for i in range(self.block_row_num):
+            for j in range(self.block_column_num):
+                self.blocks[i][j].text = self.text[i][j]
+                if self.text[i][j] != ' ':
+                    position.append([i,j])
+        self.draw_text(position)
+    
+    @property
+    def label(self):
+        labels = []
+        for i in range(self.block_row_num):
+            for j in range(self.block_column_num):
+                d = dict()
+                d['position'] = (i, j)
+                d['corr'] = self.blocks[i][j].corr
+                d['text'] = self.blocks[i][j].text
+                labels.append(d)
+        return labels
+                
+
+
+        
 #%%
 if __name__ == '__main__':
     parm = Parm()
-    num = 100
-    page1 = MattsPage(parm)
-    page2 = MattsPage(parm)
-    page3 = MattsPage(parm)
-    page4 = MattsPage(parm)
+    num = 44
+    text_selector = Text_Selector()
+    page1 = MattsPage(parm, text_selector)
+    page2 = MattsPage(parm, text_selector)
+    page3 = MattsPage(parm, text_selector)
+    page4 = MattsPage(parm, text_selector)
 
 #%%
     plt.figure(facecolor='gray')
@@ -231,7 +410,7 @@ if __name__ == '__main__':
     plt.imshow(page4.image)
     plt.axis('off') 
     plt.show()
-    
+#%%    
     for i in tqdm(range(num)):
-        page = MattsPage(parm)
+        page = MattsPage(parm, text_selector)
         matplotlib.image.imsave(f'./Pictures/page_{i}.jpg', page.image)

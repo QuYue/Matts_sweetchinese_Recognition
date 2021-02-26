@@ -1,0 +1,13 @@
+kaiti.ttf 楷体（加粗）
+simkai.ttf 楷体
+simsun.ttc 宋体
+simli.ttf 隶书
+simyou.ttf 幼圆
+
+stkaiti 华文楷体
+stxingka.ttf 华文行楷
+stfangso.ttf 华文仿宋
+stzhongs.ttf 华文中宋
+stliti.ttf 华文隶书
+stxihei.ttf 华文细黑
+stxinwei.ttf 华文新魏
