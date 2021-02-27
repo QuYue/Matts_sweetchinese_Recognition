@@ -1,6 +1,16 @@
+# -*- encoding: utf-8 -*-
+'''
+@Time        :2021/02/26 17:31:03
+@Author      :Qu Yue
+@File        :blocks.py
+@Software    :Visual Studio Code
+Introduction: Matts page generate
+'''
+
 #%%
-%matplotlib Qt5
+# %matplotlib Qt5
 import numpy as np
+import os
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -10,6 +20,7 @@ from PIL import ImageFont
 from PIL import Image
 from PIL import ImageDraw
 from draw_lines import drawline
+
 
 #%%
 class Parm():
@@ -170,7 +181,6 @@ class Block():
             drawline(self.image, (self.left_x, self.middle_y), (self.right_x, self.middle_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.left_x, self.top_y), (self.right_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
-
 
 
 class MattsPage():
@@ -352,7 +362,7 @@ class MattsPage():
                     c.append(255)
                 else:
                     c.append(j)
-            c.append(290-np.random.randint(0, 90))
+            c.append(270-np.random.randint(0, 90))
             return tuple(c)
         text_color = [self.text_color[0], self.text_color[1], self.text_color[2]]
         self.text_color = np.array(text_color)
@@ -411,6 +421,6 @@ if __name__ == '__main__':
     plt.axis('off') 
     plt.show()
 #%%    
-    for i in tqdm(range(num)):
-        page = MattsPage(parm, text_selector)
-        matplotlib.image.imsave(f'./Pictures/page_{i}.jpg', page.image)
+    # for i in tqdm(range(num)):
+    #     page = MattsPage(parm, text_selector)
+    #     matplotlib.image.imsave(f'./Pictures/page_{i}.jpg', page.image)
