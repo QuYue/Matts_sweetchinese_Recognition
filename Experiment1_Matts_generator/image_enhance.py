@@ -14,8 +14,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 
+
 #%% 
-class image_enhance():
+class Image_Enhance():
     def __init__(self, m_page):
         self.m_page = m_page
         self.rotate = True # 是否旋转
@@ -28,4 +29,5 @@ class image_enhance():
 
 #%%
 if __name__ == '__main__':
+    a = Image_Enhance()
     

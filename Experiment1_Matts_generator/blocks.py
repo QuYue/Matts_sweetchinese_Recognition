@@ -6,9 +6,8 @@
 @Software    :Visual Studio Code
 Introduction: Matts page generate
 '''
-
 #%%
-# %matplotlib Qt5
+#%matplotlib qt5
 import numpy as np
 import os
 import cv2
@@ -349,6 +348,7 @@ class MattsPage():
                 draw.text((block.middle_x-int((fontsize[0]+font.getoffset(text)[0])/2), block.middle_y-int((fontsize[1]+font.getoffset(text)[1])/2)),text,fill=self.text_color,font=font)
         image = Image.alpha_composite(image, text_overlay)
         self.image = np.array(image)
+        self.image = self.image[:,:,:3]
 
 
     def get_texts(self):
@@ -421,6 +421,6 @@ if __name__ == '__main__':
     plt.axis('off') 
     plt.show()
 #%%    
-    # for i in tqdm(range(num)):
-    #     page = MattsPage(parm, text_selector)
-    #     matplotlib.image.imsave(f'./Pictures/page_{i}.jpg', page.image)
+    for i in tqdm(range(num)):
+        page = MattsPage(parm, text_selector)
+        matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
