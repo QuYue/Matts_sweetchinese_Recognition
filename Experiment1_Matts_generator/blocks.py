@@ -158,6 +158,7 @@ class Block():
         self.block_type = block_type
         self.line_type = line_type
         self.line_gap = line_gap
+        self.text = None
 
         self.top_y = self.left_top[1]
         self.bottom_y = self.right_bottom[1]
@@ -167,7 +168,7 @@ class Block():
         self.middle_y = int((self.top_y + self.bottom_y)/2)
 
         self.corr = (self.left_x, self.top_y, self.right_x, self.bottom_y)
-        self.text = None
+        
     
     def draw(self):
         cv2.rectangle(self.image, self.left_top, self.right_bottom, (0,0,0), 2)
@@ -180,6 +181,15 @@ class Block():
             drawline(self.image, (self.left_x, self.middle_y), (self.right_x, self.middle_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.left_x, self.top_y), (self.right_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
+    
+    def enhance(self, left_top_e, right_bottom_e ):
+        self.left_top_e = left_top_e # 左上角坐标 
+        self.right_bottom_e = right_bottom_e  # 右下角坐标
+        self.top_y_e = self.left_top_e[1]
+        self.bottom_y_e = self.right_bottom_e[1]
+        self.left_x_e = self.left_top_e[0]
+        self.right_x_e = self.right_bottom_e[0]
+        self.corr_e = (self.left_x_e, self.top_y_e, self.right_x_e, self.bottom_y_e)
 
 
 class MattsPage():
@@ -392,6 +402,17 @@ class MattsPage():
                 labels.append(d)
         return labels
                 
+    @property
+    def label_e(self):
+        labels = []
+        for i in range(self.block_row_num):
+            for j in range(self.block_column_num):
+                d = dict()
+                d['position'] = (i, j)
+                d['corr'] = self.blocks[i][j].corr_e
+                d['text'] = self.blocks[i][j].text
+                labels.append(d)
+        return labels
 
 
         
@@ -420,7 +441,7 @@ if __name__ == '__main__':
     plt.imshow(page4.image)
     plt.axis('off') 
     plt.show()
-#%%    
-    for i in tqdm(range(num)):
-        page = MattsPage(parm, text_selector)
-        matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
+# #%%    
+#     for i in tqdm(range(num)):
+#         page = MattsPage(parm, text_selector)
+#         matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
