@@ -70,3 +70,4 @@ if __name__ == '__main__':
     plt.scatter(new_page1.Q[0], new_page1.Q[1])
     plt.show()
     
+    
