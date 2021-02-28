@@ -168,7 +168,7 @@ class Block():
         self.middle_y = int((self.top_y + self.bottom_y)/2)
 
         self.corr = (self.left_x, self.top_y, self.right_x, self.bottom_y)
-        
+        self.corr_e = (self.left_x, self.top_y, self.right_x, self.bottom_y)
     
     def draw(self):
         cv2.rectangle(self.image, self.left_top, self.right_bottom, (0,0,0), 2)
@@ -182,7 +182,7 @@ class Block():
             drawline(self.image, (self.left_x, self.top_y), (self.right_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
     
-    def enhance(self, left_top_e, right_bottom_e ):
+    def enhance(self, left_top_e, right_bottom_e):
         self.left_top_e = left_top_e # 左上角坐标 
         self.right_bottom_e = right_bottom_e  # 右下角坐标
         self.top_y_e = self.left_top_e[1]
