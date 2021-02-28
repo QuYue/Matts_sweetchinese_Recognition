@@ -30,7 +30,7 @@ class Image_Enhance():
         self.ifshadow = True # 是否阴影 
         self.change_size = ['expand', 'reduce', 'nochange']
         self.ifdesktop = True # 是否有桌面
-        self.desktop_path = './Resource/Pictures'
+        self.desktop_path = './Resource/Backgrounds'
 
         self.image = self.m_page.image
         self.blocks = self.m_page.blocks
@@ -83,7 +83,7 @@ class Image_Enhance():
 #%%
 if __name__ == '__main__':
     parm = Parm()
-    text_selector = Text_Selector()
+    text_selector = Text_Selector(0.1, 0.1, 0.3, parm.text_library_path)
     page1 = MattsPage(parm, text_selector)
     new_page1 = Image_Enhance(page1)
     plt.figure()

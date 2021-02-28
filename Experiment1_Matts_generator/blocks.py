@@ -49,14 +49,14 @@ class Parm():
 
         self._threelines_type = ['dotted0','dotted1', 'normal']
 
-        self.text_library_path = './Fonts'
+        self.text_library_path = './Resource/Fonts'
         self._text_model = [1,2] # 2种文字排版模式
         self._space_ratio2 = [0, 0.8] # 模式2空格率
         self._text_color = [(0, 0, 0), (0,0,255), (255, 0, 0), (180,180,180), (128,0,200)] # 文字颜色
 
 
 class Text_Selector:
-    def __init__(self, pun_ratio=0.1, space_ratio=0.1, space_ratio2=0.3, path='./Fonts'):
+    def __init__(self, pun_ratio=0.1, space_ratio=0.1, space_ratio2=0.3, path='./Resource/Fonts'):
         self.path = path
         self.chinese = ''
         self.fonts = []
@@ -420,7 +420,7 @@ class MattsPage():
 if __name__ == '__main__':
     parm = Parm()
     num = 44
-    text_selector = Text_Selector()
+    text_selector = Text_Selector(0.1, 0.1, 0.3, parm.text_library_path)
     page1 = MattsPage(parm, text_selector)
     page2 = MattsPage(parm, text_selector)
     page3 = MattsPage(parm, text_selector)
@@ -441,7 +441,7 @@ if __name__ == '__main__':
     plt.imshow(page4.image)
     plt.axis('off') 
     plt.show()
-# #%%    
-#     for i in tqdm(range(num)):
-#         page = MattsPage(parm, text_selector)
-#         matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
+#%%    
+    for i in tqdm(range(num)):
+        page = MattsPage(parm, text_selector)
+        matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
