@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 
-# import numpy as np
+#%% 画横线
 def drawline(img,pt1,pt2,color,thickness=1,style='dotted1',gap=15):
     dist =((pt1[0]-pt2[0])**2+(pt1[1]-pt2[1])**2)**.5
     pts= []
@@ -42,9 +42,6 @@ def drawline(img,pt1,pt2,color,thickness=1,style='dotted1',gap=15):
     elif style == 'normal':
         cv2.line(img,pt1,pt2,color,thickness)
         
-
-
-
 def drawpoly(img,pts,color,thickness=1,style='dotted1', gap=15):
     s=pts[0]
     e=pts[0]
@@ -57,6 +54,51 @@ def drawpoly(img,pts,color,thickness=1,style='dotted1', gap=15):
 def drawrect(img,pt1,pt2,color,thickness=1,style='dotted1', gap=15):
     pts = [pt1,(pt2[0],pt1[1]),pt2,(pt1[0],pt2[1])] 
     drawpoly(img,pts,color,thickness,style)
+
+
+#%% 图片叠加
+def img_float32(img):
+    return img.copy() if img.dtype != 'uint8' else (img/255.).astype('float32')
+ 
+def over(fgimg, bgimg):
+    fgimg, bgimg = img_float32(fgimg),img_float32(bgimg)
+    (fb,fg,fr,fa),(bb,bg,br,ba) = cv2.split(fgimg),cv2.split(bgimg)
+    color_fg, color_bg = cv2.merge((fb,fg,fr)), cv2.merge((bb,bg,br))
+    alpha_fg, alpha_bg = np.expand_dims(fa, axis=-1), np.expand_dims(ba, axis=-1)
+    
+    color_fg[fa==0]=[0,0,0]
+    color_bg[ba==0]=[0,0,0]
+    
+    a = fa + ba * (1-fa)
+    a[a==0]=np.NaN
+    color_over = (color_fg * alpha_fg + color_bg * alpha_bg * (1-alpha_fg)) / np.expand_dims(a, axis=-1)
+    color_over = np.clip(color_over,0,1)
+    color_over[a==0] = [0,0,0]
+    
+    result_float32 = np.append(color_over, np.expand_dims(a, axis=-1), axis = -1)
+    return (result_float32*255).astype('uint8')
+ 
+def image_overlay(fgimg, bgimg, xmin = 0, ymin = 0,trans_percent = 1):
+    '''
+    fgimg: a 4 channel image, use as foreground
+    bgimg: a 4 channel image, use as background
+    xmin, ymin: a corrdinate in bgimg. from where the fgimg will be put
+    trans_percent: transparency of fgimg. [0.0,1.0]
+    '''
+    #we assume all the input image has 4 channels
+    assert(bgimg.shape[-1] == 4 and fgimg.shape[-1] == 4)
+    fgimg = fgimg.copy()
+    roi = bgimg[ymin:ymin+fgimg.shape[0], xmin:xmin+fgimg.shape[1]].copy()
+    
+    b,g,r,a = cv2.split(fgimg)
+    
+    fgimg = cv2.merge((b,g,r,(a*trans_percent).astype(fgimg.dtype)))
+    
+    roi_over = over(fgimg,roi)
+    
+    result = bgimg.copy()
+    result[ymin:ymin+fgimg.shape[0], xmin:xmin+fgimg.shape[1]] = roi_over
+    return result
 
 #%%
 if __name__ == '__main__':
@@ -73,3 +115,4 @@ if __name__ == '__main__':
 
     cv2.imshow('im',im)
     cv2.waitKey()
+

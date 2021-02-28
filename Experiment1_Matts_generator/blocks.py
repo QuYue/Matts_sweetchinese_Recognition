@@ -18,7 +18,7 @@ from tqdm import tqdm
 from PIL import ImageFont
 from PIL import Image
 from PIL import ImageDraw
-from draw_lines import drawline
+from draw_tools import drawline
 
 
 #%%

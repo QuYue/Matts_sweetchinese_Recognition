@@ -15,6 +15,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import random
 from blocks import Parm, Text_Selector, MattsPage
+from draw_tools import image_overlay
 
 
 #%% 
@@ -23,6 +24,7 @@ class Image_Enhance():
         self.m_page = m_page
         self.ifrotate = True # 是否旋转
         self.ifperspective = True # 是否透视
+        self.perspective = 0.01 # 透视坐标变换比例
         self.ifnoise = True # 是否噪音
         self.noise_std = 50 # 高斯噪声方差
         self.ifshadow = True # 是否阴影 
@@ -34,30 +36,41 @@ class Image_Enhance():
         self.blocks = self.m_page.blocks
         self.label_old = self.m_page.label
         self.label = self.m_page.label_e
+        self.size = self.m_page.size
+        
 
+
+        self.Alpha()
         # self.Noise()
         # self.Rotate()
 
+    def Alpha(self):
+        alpha_channel = np.ones([self.image.shape[0], self.image.shape[1], 1]).astype(np.uint8) * 255
+        self.image = np.concatenate([self.image, alpha_channel], 2)
 
     def Noise(self):
         self.image = self.image.astype(np.int64)
-        self.noise = np.round(np.random.normal(0, self.noise_std, self.image.shape)).astype(np.int64)
-        self.image += self.noise
+        self.noise = np.round(np.random.normal(0, self.noise_std, [self.image.shape[0],self.image.shape[1],3])).astype(np.int64)
+        self.image[...,:3] += self.noise
 
         self.image[self.image<0] = 0
         self.image[self.image>255] = 255
         self.image = self.image.astype(np.uint8)
+ 
+
+    # def perspective(self):
+
     
     def Rotate(self):
         hight, width = self.image.shape[:2]#self.m_page.width, self.m_page.hight
         self.angle = np.random.randint(-30, 30)
   
-        hightNew = int(width * np.abs(np.sin(np.radians(self.angle))) + hight * np.abs(np.cos(np.radians(self.angle))))
-        widthNew = int(width * np.abs(np.cos(np.radians(self.angle))) + hight * np.abs(np.sin(np.radians(self.angle))))
+        hightNew = int(width * np.abs(np.sin(np.radians(self.angle))) + hight * np.abs(np.cos(np.radians(self.angle)))) + 60
+        widthNew = int(width * np.abs(np.cos(np.radians(self.angle))) + hight * np.abs(np.sin(np.radians(self.angle)))) + 60
         matRotation = cv2.getRotationMatrix2D((width//2, hight//2), self.angle, 1)
-        matRotation[0,2] += (widthNew - width)//2
-        matRotation[1,2] += (hightNew - hight)//2
-        self.image = cv2.warpAffine(self.image, matRotation,(widthNew,hightNew), borderValue=(0,0,0))
+        matRotation[0,2] += (widthNew - width)//2 + 10
+        matRotation[1,2] += (hightNew - hight)//2 + 10
+        self.image = cv2.warpAffine(self.image, matRotation,(widthNew,hightNew), borderValue=(0,0,0,0))
         
         for b in self.blocks:
             for block in b:
@@ -65,7 +78,7 @@ class Image_Enhance():
                 block.enhance(tuple(new_corr[:,0]), tuple(new_corr[:,1]))
 
 
-
+        
 
 #%%
 if __name__ == '__main__':
@@ -85,7 +98,7 @@ if __name__ == '__main__':
     plt.imshow(new_page1.image)
     plt.show()
 
-
+    
     plt.subplot(1,3,3)
     new_page1.Rotate()
     plt.imshow(new_page1.image)
@@ -94,5 +107,5 @@ if __name__ == '__main__':
     y = [new_page1.m_page.label_e[10]['corr'][1], new_page1.m_page.label_e[-1]['corr'][1]]
     plt.scatter(x,y)
     plt.show()
-    
-    
+
+
