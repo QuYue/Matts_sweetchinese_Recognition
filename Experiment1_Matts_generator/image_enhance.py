@@ -42,13 +42,10 @@ class Image_Enhance():
         matRotation[1,2] += (hightNew - hight)//2
         self.imgRotation = cv2.warpAffine(self.m_page.image, matRotation,(widthNew,hightNew), borderValue=(0,0,0))
         
-        x = self.m_page.label[0]['corr'][0]
-        y = self.m_page.label[0]['corr'][1]
-        print(matRotation.shape)
-        self.Q = np.dot(matRotation,np.array([[x],[y],[1]]))
         for b in self.m_page.blocks:
             for block in b:
-                left_top = np.dot(MatRotation,np.array([left_top+[1], right_bottem+[1]]).T)
+                left_top = np.dot(matRotation,np.array([left_top+[1], right_bottem+[1]]).T)
+                
 
 
 
