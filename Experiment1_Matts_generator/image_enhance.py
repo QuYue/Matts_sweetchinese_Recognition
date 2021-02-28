@@ -24,7 +24,7 @@ class Image_Enhance():
         self.ifrotate = True # 是否旋转
         self.ifperspective = True # 是否透视
         self.ifnoise = True # 是否噪音
-        self.noise_std = 0.2 # 高斯噪声方差
+        self.noise_std = 50 # 高斯噪声方差
         self.ifshadow = True # 是否阴影 
         self.change_size = ['expand', 'reduce', 'nochange']
         self.ifdesktop = True # 是否有桌面
@@ -40,13 +40,13 @@ class Image_Enhance():
 
 
     def Noise(self):
-        self.image = self.image.astype(np.float64)
-        self.noise = np.round(np.random.normal(0, self.noise_std, self.image.shape))
+        self.image = self.image.astype(np.int64)
+        self.noise = np.round(np.random.normal(0, self.noise_std, self.image.shape)).astype(np.int64)
         self.image += self.noise
 
         self.image[self.image<0] = 0
         self.image[self.image>255] = 255
-        # self.image = self.image.astype(np.float64)
+        self.image = self.image.astype(np.uint8)
     
     def Rotate(self):
         hight, width = self.image.shape[:2]#self.m_page.width, self.m_page.hight
