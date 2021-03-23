@@ -100,6 +100,35 @@ def image_overlay(fgimg, bgimg, xmin = 0, ymin = 0,trans_percent = 1):
     result[ymin:ymin+fgimg.shape[0], xmin:xmin+fgimg.shape[1]] = roi_over
     return result
 
+#%% 光照
+#设置图片光照的具体实现
+def make_pic_lights(img, light_strength=90):
+    # 读取原始图像
+    # 获取图像行和列
+    rows, cols = img.shape[:2]
+    image = img.astype(np.int64)
+
+    '''可修改'''
+    centerX = np.random.randint(0,cols)
+    centerY = np.random.randint(0,rows)# 设置中心点
+
+    radius = np.random.randint(min(rows, cols)/3, max(rows, cols)/2)
+
+    '''可修改'''
+    strength = np.random.randint(0,light_strength)# 设置光照强度
+
+    # 图像光照特效
+    distance = np.ones(image.shape[:2])
+    for i in range(rows):
+        for j in range(cols):
+            distance[i,j] = (centerY - i)**2 + (centerX - j)**2 
+    result = np.round(strength * (1.0 - np.sqrt(distance) / radius))[..., np.newaxis].astype(np.int64)
+    image[...,:3] += result
+    image[image<0] = 0
+    image[image>255] = 255
+    image = image.astype(np.uint8)
+    return image
+
 #%%
 if __name__ == '__main__':
     im = np.zeros((800,800,3),dtype='uint8')

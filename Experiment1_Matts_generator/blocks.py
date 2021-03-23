@@ -52,7 +52,7 @@ class Parm():
         self.text_library_path = './Resource/Fonts'
         self._text_model = [1,2] # 2种文字排版模式
         self._space_ratio2 = [0, 0.8] # 模式2空格率
-        self._text_color = [(0, 0, 0), (0,0,255), (255, 0, 0), (180,180,180), (128,0,200)] # 文字颜色
+        self._text_color = [(0, 0, 0), (0,0,255), (255, 0, 0), (200,200,200), (128,0,200)] # 文字颜色
 
 
 class Text_Selector:
@@ -168,7 +168,9 @@ class Block():
         self.middle_y = int((self.top_y + self.bottom_y)/2)
 
         self.corr = (self.left_x, self.top_y, self.right_x, self.bottom_y)
-        self.corr_e = (self.left_x, self.top_y, self.right_x, self.bottom_y)
+        self.left_top_e = left_top # 左上角坐标 
+        self.right_bottom_e = right_bottom # 右下角坐标
+        self.corr_e = (self.left_x.astype(np.float64), self.top_y.astype(np.float64), self.right_x.astype(np.float64), self.bottom_y.astype(np.float64))
     
     def draw(self):
         cv2.rectangle(self.image, self.left_top, self.right_bottom, (0,0,0), 2)
@@ -185,10 +187,10 @@ class Block():
     def enhance(self, left_top_e, right_bottom_e):
         self.left_top_e = left_top_e # 左上角坐标 
         self.right_bottom_e = right_bottom_e  # 右下角坐标
-        self.top_y_e = self.left_top_e[1]
-        self.bottom_y_e = self.right_bottom_e[1]
-        self.left_x_e = self.left_top_e[0]
-        self.right_x_e = self.right_bottom_e[0]
+        self.top_y_e = self.left_top_e[1].astype(np.float64)
+        self.bottom_y_e = self.right_bottom_e[1].astype(np.float64)
+        self.left_x_e = self.left_top_e[0].astype(np.float64)
+        self.right_x_e = self.right_bottom_e[0].astype(np.float64)
         self.corr_e = (self.left_x_e, self.top_y_e, self.right_x_e, self.bottom_y_e)
 
 
