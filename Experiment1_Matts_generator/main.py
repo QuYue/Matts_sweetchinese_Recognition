@@ -4,7 +4,7 @@
 @Author      :Qu Yue
 @File        :main.py
 @Software    :Visual Studio Code
-Introduction:  
+Introduction:  1
 '''
 #%%
 # %matplotlib qt5
