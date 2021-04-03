@@ -61,6 +61,18 @@ class Image_Enhance():
     def label(self):
         return self.m_page.label_e
 
+    @property
+    def enhance(self):
+        return {'noise': self.ifnoise, 
+                'light': self.iflight, 
+                'rotate': self.ifrotate,
+                'perspective': self.ifperspective,
+                'background': self.ifdesktop}
+
+    @property
+    def save_label(self):
+        return {'enhance': self.enhance, 'label': self.label}
+
     def Alpha(self, image):
         alpha_channel = np.ones([image.shape[0], image.shape[1], 1]).astype(np.uint8) * 255
         image = np.concatenate([image[...,:3], alpha_channel], 2)

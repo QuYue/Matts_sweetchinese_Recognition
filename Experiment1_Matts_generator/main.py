@@ -4,7 +4,7 @@
 @Author      :Qu Yue
 @File        :main.py
 @Software    :Visual Studio Code
-Introduction:  12
+Introduction:  
 '''
 #%%
 # %matplotlib qt5
@@ -74,16 +74,19 @@ class Parm():
         self._desktop_path = './Resource/Backgrounds'
 
 if __name__ == '__main__':
-    num=20
+    start = 0
+    end = 100
+
     parm = Parm()
     text_selector = Text_Selector(parm.pun_ratio, parm.space_ratio, parm.space_ratio2, parm.text_library_path)
 
-    for i in tqdm(range(num)):
+    for i in tqdm(range(end-start)):
         page = MattsPage(parm, text_selector)
         new_page = Image_Enhance(page)
         new_page.read_parm(parm)
         new_page.image_enhance()
-        matplotlib.image.imsave(f'../../Datasets/Dataset1/data/page_{i}.jpg', new_page.image)
-        label_file=f'../../Datasets/Dataset1/label/page_{i}.json'
+        matplotlib.image.imsave(f'../../Datasets/Dataset1/data/page_{i+start}.jpg', new_page.image)
+        label_file=f'../../Datasets/Dataset1/label/page_{i+start}.json'
+        # print(f"noise: {new_page.ifnoise} | light: {new_page.iflight} | perspective: {new_page.ifperspective} | rotate: {new_page.ifrotate} | desktop: {new_page.ifdesktop}" )
         with open(label_file,'w') as file:
-            json.dump(new_page.label,file)
+            json.dump(new_page.save_label,file)
