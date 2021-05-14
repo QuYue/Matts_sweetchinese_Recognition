@@ -61,6 +61,10 @@ class Image_Enhance():
     @property
     def label(self):
         return self.m_page.label_e
+    
+    @property
+    def page_label(self):
+        return self.m_page.page_label
 
     @property
     def enhance(self):
@@ -72,13 +76,17 @@ class Image_Enhance():
 
     @property
     def save_label(self):
-        return {'enhance': self.enhance, 'label': self.label}
+        return {'enhance': self.enhance, 'page_label': self.m_page.page_label, 'label': self.label}
     
     @property
     def yolo_label(self):
         label = self.save_label['label']
         new_label = []
         shape = self.image.shape
+        new_label.append([3, self.page_label['left_top'][0]/shape[1], self.page_label['left_top'][1]/shape[0], 0.01, 0.01])
+        new_label.append([4, self.page_label['right_top'][0]/shape[1], self.page_label['right_top'][1]/shape[0], 0.01, 0.01])
+        new_label.append([5, self.page_label['left_bottom'][0]/shape[1], self.page_label['left_bottom'][1]/shape[0], 0.01, 0.01])
+        new_label.append([6, self.page_label['right_bottom'][0]/shape[1], self.page_label['right_bottom'][1]/shape[0], 0.01, 0.01])
         for i in label:
             _class = 0
             if i['text'] == ' ':
@@ -87,10 +95,10 @@ class Image_Enhance():
                 _class = 2
             else:
                 _class = 1
-            x1 = i['corr'][0]
-            x2 = i['corr'][2]
-            y1 = i['corr'][1]
-            y2 = i['corr'][3]
+            x1 = min(i['corr']['left_top'][0],i['corr']['left_bottom'][0])
+            x2 = max(i['corr']['right_top'][0],i['corr']['right_bottom'][0])
+            y1 = min(i['corr']['left_top'][1],i['corr']['right_top'][1])
+            y2 = max(i['corr']['left_bottom'][1],i['corr']['right_bottom'][1])
             x_center = ((x1 + x2) / 2) / shape[1]
             y_center = ((y1 + y2) / 2) / shape[0]
             width = (x2 - x1) / shape[1]
@@ -124,8 +132,8 @@ class Image_Enhance():
 
         for b in self.blocks:
             for block in b:
-                new_corr = cv2.perspectiveTransform(np.array([[block.left_top_e, block.right_bottom_e]], dtype=np.float32), Mat)
-                block.enhance(tuple(new_corr[0,0,:]), tuple(new_corr[0,1,:]))
+                new_corr = cv2.perspectiveTransform(np.array([[block.left_top_e, block.right_top_e, block.left_bottom_e, block.right_bottom_e]], dtype=np.float32), Mat)
+                block.enhance(tuple(new_corr[0,0,:]), tuple(new_corr[0,1,:]), tuple(new_corr[0,2,:]), tuple(new_corr[0,3,:]))
     
     def Rotate(self):
         hight, width = self.image.shape[:2]#self.m_page.width, self.m_page.hight
@@ -138,8 +146,8 @@ class Image_Enhance():
         
         for b in self.blocks:
             for block in b:
-                new_corr = np.dot(mat,np.array([block.left_top_e+(1,), block.right_bottom_e+(1,)]).T)
-                block.enhance(tuple(new_corr[:,0]), tuple(new_corr[:,1]))
+                new_corr = np.dot(mat,np.array([block.left_top_e+(1,), block.right_top_e+(1,), block.left_bottom_e+(1,), block.right_bottom_e+(1,)]).T)
+                block.enhance(tuple(new_corr[:,0]), tuple(new_corr[:,1]), tuple(new_corr[:,2]), tuple(new_corr[:,3]))
 
     def Expand(self):
         hight, width = self.image.shape[:2]
@@ -151,8 +159,8 @@ class Image_Enhance():
         self.image = np.pad(self.image, ((self.top_expand, self.bottom_expand), (self.left_expand, self.right_expand), (0, 0)), 'constant', constant_values=0)
         for b in self.blocks:
             for block in b:
-                new_corr = np.array([block.left_top_e, block.right_bottom_e]) + [self.left_expand, self.top_expand]
-                block.enhance(tuple(new_corr[0,:]), tuple(new_corr[1,:]))
+                new_corr = np.array([block.left_top_e, block.right_top_e, block.left_bottom_e, block.right_bottom_e]) + [self.left_expand, self.top_expand]
+                block.enhance(tuple(new_corr[0,:]), tuple(new_corr[1,:]), tuple(new_corr[2,:]), tuple(new_corr[3,:]))
 
     def Light(self):
         self.image = make_pic_lights(self.image, self.light_strength)
@@ -175,8 +183,8 @@ class Image_Enhance():
 
         for b in self.blocks:
             for block in b:
-                new_corr = np.array([block.left_top_e, block.right_bottom_e]) - [self.left_cut, self.top_cut]
-                block.enhance(tuple(new_corr[0,:]), tuple(new_corr[1,:]))
+                new_corr = np.array([block.left_top_e, block.right_top_e, block.left_bottom_e, block.right_bottom_e]) - [self.left_cut, self.top_cut]
+                block.enhance(tuple(new_corr[0,:]), tuple(new_corr[1,:]), tuple(new_corr[2,:]), tuple(new_corr[3,:]))
 
     
     def image_enhance(self):
@@ -201,11 +209,16 @@ if __name__ == '__main__':
     text_selector = Text_Selector(0.1, 0.1, 0.3, parm.text_library_path)
     page1 = MattsPage(parm, text_selector)
     new_page1 = Image_Enhance(page1)
+    new_page1.image = new_page1.Alpha(new_page1.image)
     plt.figure()
     plt.subplot(2,4,1)
-    plt.imshow(new_page1.image)
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
     plt.scatter(x, y)
     plt.axis('off') 
     plt.title('Original')
@@ -214,7 +227,7 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Noise()
     end = time.time()
-    plt.imshow(new_page1.image)
+    plt.imshow(new_page1.image[:,:,:3])
     plt.axis('off') 
     plt.title(f'Noise {end-start :^ 8.4f}s')
 
@@ -222,7 +235,7 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Light()
     end = time.time()
-    plt.imshow(new_page1.image)
+    plt.imshow(new_page1.image[:,:,:3])
     plt.axis('off') 
     plt.title(f'Light {end-start :^ 8.4f}s')
 
@@ -230,9 +243,13 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Perspective()
     end = time.time()
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
-    plt.imshow(new_page1.image)
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
     plt.scatter(x,y)
     plt.axis('off') 
     plt.title(f'Perspective {end-start :^ 8.4f}s')
@@ -241,9 +258,13 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Rotate()
     end = time.time()
-    plt.imshow(new_page1.image)
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
     plt.scatter(x,y)
     plt.axis('off') 
     plt.title(f'Rotate {end-start :^ 8.4f}s')
@@ -252,9 +273,13 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Expand()
     end = time.time()
-    plt.imshow(new_page1.image)
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
     plt.scatter(x,y)
     plt.axis('off') 
     plt.title(f'Expand {end-start :^ 8.4f}s')
@@ -263,9 +288,13 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Backgrounds()
     end = time.time()
-    plt.imshow(new_page1.image)
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
     plt.scatter(x,y)
     plt.axis('off') 
     plt.title(f'Backgrounds {end-start :^ 8.4f}s')
@@ -274,9 +303,13 @@ if __name__ == '__main__':
     start = time.time()
     new_page1.Cut()
     end = time.time()
-    plt.imshow(new_page1.image)
-    x = [new_page1.label[10]['corr'][0], new_page1.label[-1]['corr'][0]]
-    y = [new_page1.label[10]['corr'][1], new_page1.label[-1]['corr'][1]]
+    plt.imshow(new_page1.image[:,:,:3])
+    x = [new_page1.label[10]['corr']['left_top'][0], new_page1.label[10]['corr']['right_top'][0], new_page1.label[10]['corr']['left_bottom'][0], new_page1.label[10]['corr']['right_bottom'][0],
+         new_page1.label[-1]['corr']['left_top'][0], new_page1.label[-1]['corr']['right_top'][0], new_page1.label[-1]['corr']['left_bottom'][0], new_page1.label[-1]['corr']['right_bottom'][0],
+         new_page1.page_label['left_top'][0], new_page1.page_label['right_top'][0], new_page1.page_label['left_bottom'][0], new_page1.page_label['right_bottom'][0]]
+    y = [new_page1.label[10]['corr']['left_top'][1], new_page1.label[10]['corr']['right_top'][1], new_page1.label[10]['corr']['left_bottom'][1], new_page1.label[10]['corr']['right_bottom'][1],
+         new_page1.label[-1]['corr']['left_top'][1], new_page1.label[-1]['corr']['right_top'][1], new_page1.label[-1]['corr']['left_bottom'][1], new_page1.label[-1]['corr']['right_bottom'][1],
+         new_page1.page_label['left_top'][1], new_page1.page_label['right_top'][1], new_page1.page_label['left_bottom'][1], new_page1.page_label['right_bottom'][1]]
     plt.scatter(x,y)
     plt.axis('off') 
     plt.title(f'Cut {end-start :^ 8.4f}s')
@@ -284,3 +317,5 @@ if __name__ == '__main__':
     plt.show()
 
 
+
+#%%

@@ -26,7 +26,7 @@ from image_enhance import Image_Enhance#%%
 class Parameters():
     def __init__(self):
         ##### save
-        self.save_path = '../../Datasets/Dataset0/'
+        self.save_path = '../../Datasets/Dataset1/'
         self.save_type = 'train'
         ##### blocks
         self._top_edge = [0, 0.15] # 上边缘比例
@@ -65,9 +65,9 @@ class Parameters():
         self.space_ratio2 = 0.3 # 空白率（部分）
 
         ##### image enhance
-        self._ifrotate = 0 # 0.7 # 旋转的概率
+        self._ifrotate = 0.7 # 0.7 # 旋转的概率
         self._angle = [-20, 20]
-        self._ifperspective = 0 # 0 #0.7 # 透视的概率
+        self._ifperspective = 0.7 # 0 #0.7 # 透视的概率
         self._perspective_range = [0, 0.1] # 透视坐标变换比例
         self._ifnoise = 0.7 # 噪音的概率
         self._noise_std = [10,50] # 高斯噪声方差
@@ -83,7 +83,7 @@ def makedirs(x):
 
 if __name__ == '__main__':
     start = 0
-    end = 10000
+    end = 10
 
     Parm = Parameters()
     text_selector = Text_Selector(Parm.pun_ratio, Parm.space_ratio, Parm.space_ratio2, Parm.text_library_path)
@@ -106,3 +106,4 @@ if __name__ == '__main__':
         new_page.yolo_label.to_csv(path3+f'/page_{i+start}.txt', index=False, header=False, sep=' ', float_format='%.6f')
 
             
+#%%

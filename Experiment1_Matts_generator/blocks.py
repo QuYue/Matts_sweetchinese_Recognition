@@ -170,7 +170,13 @@ class Block():
         self.corr = (self.left_x, self.top_y, self.right_x, self.bottom_y)
         self.left_top_e = left_top # 左上角坐标 
         self.right_bottom_e = right_bottom # 右下角坐标
+        self.right_top_e = (self.right_x,self.top_y) # 右上角坐标
+        self.left_bottom_e = (self.left_x,self.bottom_y) # 左下角坐标
         self.corr_e = (self.left_x.astype(np.float64), self.top_y.astype(np.float64), self.right_x.astype(np.float64), self.bottom_y.astype(np.float64))
+        self.corr_all = {'left_top':    [self.left_x.astype(np.float64), self.top_y.astype(np.float64)],
+                         'right_top':   [self.right_x.astype(np.float64), self.top_y.astype(np.float64)],
+                         'left_bottom': [self.left_x.astype(np.float64), self.bottom_y.astype(np.float64)],
+                         'right_bottom':[self.right_x.astype(np.float64), self.bottom_y.astype(np.float64)]}
     
     def draw(self):
         cv2.rectangle(self.image, self.left_top, self.right_bottom, (0,0,0), 2)
@@ -184,14 +190,19 @@ class Block():
             drawline(self.image, (self.left_x, self.top_y), (self.right_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
             drawline(self.image, (self.right_x, self.top_y), (self.left_x, self.bottom_y), (0,0,0), 1, self.line_type, self.line_gap)
     
-    def enhance(self, left_top_e, right_bottom_e):
+    def enhance(self, left_top_e, right_top_e, left_bottom_e, right_bottom_e):
         self.left_top_e = left_top_e # 左上角坐标 
+        self.right_top_e = right_top_e # 右上角坐标
+        self.left_bottom_e = left_bottom_e # 左下角坐标
         self.right_bottom_e = right_bottom_e  # 右下角坐标
-        self.top_y_e = self.left_top_e[1].astype(np.float64)
-        self.bottom_y_e = self.right_bottom_e[1].astype(np.float64)
-        self.left_x_e = self.left_top_e[0].astype(np.float64)
-        self.right_x_e = self.right_bottom_e[0].astype(np.float64)
-        self.corr_e = (self.left_x_e, self.top_y_e, self.right_x_e, self.bottom_y_e)
+        self.corr_e = (self.left_top_e[0].astype(np.float64), 
+                       self.left_top_e[1].astype(np.float64), 
+                       self.right_bottom_e[0].astype(np.float64), 
+                       self.right_bottom_e[1].astype(np.float64))
+        self.corr_all = {'left_top':    [self.left_top_e[0].astype(np.float64), self.left_top_e[1].astype(np.float64)],
+                         'right_top':   [self.right_top_e[0].astype(np.float64), self.right_top_e[1].astype(np.float64)],
+                         'left_bottom': [self.left_bottom_e[0].astype(np.float64), self.left_bottom_e[1].astype(np.float64)],
+                         'right_bottom':[self.right_bottom_e[0].astype(np.float64), self.right_bottom_e[1].astype(np.float64)]}
 
 
 class MattsPage():
@@ -403,6 +414,13 @@ class MattsPage():
                 d['text'] = self.blocks[i][j].text
                 labels.append(d)
         return labels
+
+    @property
+    def page_label(self):
+        return {'left_top':    self.blocks[0][0].corr_all['left_top'],
+                'left_bottom': self.blocks[-1][0].corr_all['left_bottom'],
+                'right_top':   self.blocks[0][-1].corr_all['right_top'],
+                'right_bottom':self.blocks[-1][-1].corr_all['right_bottom'],}
                 
     @property
     def label_e(self):
@@ -411,10 +429,12 @@ class MattsPage():
             for j in range(self.block_column_num):
                 d = dict()
                 d['position'] = (i, j)
-                d['corr'] = self.blocks[i][j].corr_e
+                d['corr'] = self.blocks[i][j].corr_all
                 d['text'] = self.blocks[i][j].text
                 labels.append(d)
         return labels
+
+    
 
 
         
@@ -444,6 +464,6 @@ if __name__ == '__main__':
     plt.axis('off') 
     plt.show()
 #%%    
-    for i in tqdm(range(num)):
-        page = MattsPage(parm, text_selector)
-        matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
+    # for i in tqdm(range(num)):
+    #     page = MattsPage(parm, text_selector)
+    #     matplotlib.image.imsave(f'../../Pictures/page_{i}.jpg', page.image)
