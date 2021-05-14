@@ -9,6 +9,7 @@ Introduction: Image enhancement
 
 #%%
 import numpy as np
+import pandas as pd
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -72,6 +73,31 @@ class Image_Enhance():
     @property
     def save_label(self):
         return {'enhance': self.enhance, 'label': self.label}
+    
+    @property
+    def yolo_label(self):
+        label = self.save_label['label']
+        new_label = []
+        shape = self.image.shape
+        for i in label:
+            _class = 0
+            if i['text'] == ' ':
+                _class = 0
+            elif i['text'] in "。，、；！？“”（）：+-=%":
+                _class = 2
+            else:
+                _class = 1
+            x1 = i['corr'][0]
+            x2 = i['corr'][2]
+            y1 = i['corr'][1]
+            y2 = i['corr'][3]
+            x_center = ((x1 + x2) / 2) / shape[1]
+            y_center = ((y1 + y2) / 2) / shape[0]
+            width = (x2 - x1) / shape[1]
+            height = (y2 - y1) / shape[0]
+            new_label.append([_class, x_center, y_center, width, height])
+        yolo_label = pd.DataFrame(new_label, columns=['class','x_center','y_center', 'width','height'])
+        return yolo_label
 
     def Alpha(self, image):
         alpha_channel = np.ones([image.shape[0], image.shape[1], 1]).astype(np.uint8) * 255

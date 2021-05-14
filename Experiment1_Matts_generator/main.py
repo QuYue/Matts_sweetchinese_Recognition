@@ -9,6 +9,7 @@ Introduction:
 #%%
 # %matplotlib qt5
 import numpy as np
+import pandas as pd
 import cv2
 import matplotlib
 import matplotlib.pyplot as plt
@@ -16,14 +17,16 @@ import matplotlib.image as imgplt
 import random
 import time
 import json
+import os
 from tqdm import tqdm
 from blocks import Text_Selector, MattsPage
 from draw_tools import image_overlay, make_pic_lights
-from image_enhance import Image_Enhance
-#%%
+from image_enhance import Image_Enhance#%%
 
-class Parm():
+class Parameters():
     def __init__(self):
+        ##### save
+        self.save_path = '../../Datasets/Dataset0/'
         ##### blocks
         self._top_edge = [0, 0.15] # 上边缘比例
         self._bottom_edge = [0, 0.15] # 下边缘比例
@@ -61,9 +64,9 @@ class Parm():
         self.space_ratio2 = 0.3 # 空白率（部分）
 
         ##### image enhance
-        self._ifrotate = 0.7 # 旋转的概率
+        self._ifrotate = 0 # 0.7 # 旋转的概率
         self._angle = [-20, 20]
-        self._ifperspective = 0.7 # 透视的概率
+        self._ifperspective = 0 # 0 #0.7 # 透视的概率
         self._perspective_range = [0, 0.1] # 透视坐标变换比例
         self._ifnoise = 0.7 # 噪音的概率
         self._noise_std = [10,50] # 高斯噪声方差
@@ -74,19 +77,28 @@ class Parm():
         self._desktop_path = './Resource/Backgrounds'
 
 if __name__ == '__main__':
-    start = 0
-    end = 100
+    start = 100
+    end = 1000
 
-    parm = Parm()
-    text_selector = Text_Selector(parm.pun_ratio, parm.space_ratio, parm.space_ratio2, parm.text_library_path)
+    Parm = Parameters()
+    text_selector = Text_Selector(Parm.pun_ratio, Parm.space_ratio, Parm.space_ratio2, Parm.text_library_path)
+    
+    def makedirs(x):
+        for i in x: 
+            if not os.path.exists(i): os.makedirs(i)
+    makedirs([Parm.save_path+'data', Parm.save_path+'label', Parm.save_path+'yolo_label'])
 
     for i in tqdm(range(end-start)):
-        page = MattsPage(parm, text_selector)
+        page = MattsPage(Parm, text_selector)
         new_page = Image_Enhance(page)
-        new_page.read_parm(parm)
+        new_page.read_parm(Parm)
         new_page.image_enhance()
-        matplotlib.image.imsave(f'../../Datasets/Dataset1/data/page_{i+start}.jpg', new_page.image)
-        label_file=f'../../Datasets/Dataset1/label/page_{i+start}.json'
+        matplotlib.image.imsave(Parm.save_path + f'data/page_{i+start}.jpg', new_page.image)
+        label_file = Parm.save_path + f'label/page_{i+start}.json'
         # print(f"noise: {new_page.ifnoise} | light: {new_page.iflight} | perspective: {new_page.ifperspective} | rotate: {new_page.ifrotate} | desktop: {new_page.ifdesktop}" )
-        with open(label_file,'w') as file:
-            json.dump(new_page.save_label,file)
+        with open(label_file,'w',encoding='utf-8') as file:
+            json.dump(new_page.save_label,file, ensure_ascii=False)
+        yolo_label_file = Parm.save_path + f'yolo_label/page_{i+start}.txt'
+        new_page.yolo_label.to_csv(yolo_label_file, index=False, header=False, sep=' ', float_format='%.6f')
+
+            
