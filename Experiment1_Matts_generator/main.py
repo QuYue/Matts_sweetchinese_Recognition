@@ -27,6 +27,7 @@ class Parameters():
     def __init__(self):
         ##### save
         self.save_path = '../../Datasets/Dataset0/'
+        self.save_type = 'train'
         ##### blocks
         self._top_edge = [0, 0.15] # 上边缘比例
         self._bottom_edge = [0, 0.15] # 下边缘比例
@@ -76,29 +77,32 @@ class Parameters():
         self._ifdesktop = 0.7 # 桌面的概率
         self._desktop_path = './Resource/Backgrounds'
 
+def makedirs(x):
+    for i in x: 
+        if not os.path.exists(i): os.makedirs(i)
+
 if __name__ == '__main__':
-    start = 100
-    end = 1000
+    start = 0
+    end = 10000
 
     Parm = Parameters()
     text_selector = Text_Selector(Parm.pun_ratio, Parm.space_ratio, Parm.space_ratio2, Parm.text_library_path)
     
-    def makedirs(x):
-        for i in x: 
-            if not os.path.exists(i): os.makedirs(i)
-    makedirs([Parm.save_path+'data', Parm.save_path+'label', Parm.save_path+'yolo_label'])
 
+    path1 = Parm.save_path+'images/'+Parm.save_type
+    path2 = Parm.save_path+'label_json/'+Parm.save_type
+    path3 = Parm.save_path+'labels/'+Parm.save_type
+    makedirs([path1, path2, path3]) 
     for i in tqdm(range(end-start)):
         page = MattsPage(Parm, text_selector)
         new_page = Image_Enhance(page)
         new_page.read_parm(Parm)
         new_page.image_enhance()
-        matplotlib.image.imsave(Parm.save_path + f'data/page_{i+start}.jpg', new_page.image)
-        label_file = Parm.save_path + f'label/page_{i+start}.json'
+        matplotlib.image.imsave(path1 + f'/page_{i+start}.jpg', new_page.image)
+        label_file = path2 + f'/page_{i+start}.json'
         # print(f"noise: {new_page.ifnoise} | light: {new_page.iflight} | perspective: {new_page.ifperspective} | rotate: {new_page.ifrotate} | desktop: {new_page.ifdesktop}" )
-        with open(label_file,'w',encoding='utf-8') as file:
+        with open(path2 + f'/page_{i+start}.json', 'w',encoding='utf-8') as file:
             json.dump(new_page.save_label,file, ensure_ascii=False)
-        yolo_label_file = Parm.save_path + f'yolo_label/page_{i+start}.txt'
-        new_page.yolo_label.to_csv(yolo_label_file, index=False, header=False, sep=' ', float_format='%.6f')
+        new_page.yolo_label.to_csv(path3+f'/page_{i+start}.txt', index=False, header=False, sep=' ', float_format='%.6f')
 
             
