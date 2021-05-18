@@ -27,7 +27,7 @@ class Parameters():
     def __init__(self):
         ##### save
         self.save_path = '../../Datasets/Dataset1/'
-        self.save_type = 'train'
+        self.save_type = 'val'
         ##### blocks
         self._top_edge = [0, 0.15] # 上边缘比例
         self._bottom_edge = [0, 0.15] # 下边缘比例
@@ -83,7 +83,7 @@ def makedirs(x):
 
 if __name__ == '__main__':
     start = 0
-    end = 10
+    end = 1000
 
     Parm = Parameters()
     text_selector = Text_Selector(Parm.pun_ratio, Parm.space_ratio, Parm.space_ratio2, Parm.text_library_path)
